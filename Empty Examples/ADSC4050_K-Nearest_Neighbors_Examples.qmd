@@ -1,0 +1,324 @@
+---
+title: "ADSC4050 K-Nearest Neighbors Examples"
+author: "Sean Hellingman"
+format: html
+editor: visual
+---
+
+## Illustrative Example 1
+
+Visual example of two-dimensional kNN classification
+
+```{r}
+
+library(ggplot2)
+library(class)
+library(dplyr)
+
+set.seed(4050)
+
+# Load data
+data(iris)
+
+df <- iris %>%
+  select(Petal.Length, Petal.Width, Species)
+
+# Train/Test Split
+train_index <- sample(1:nrow(df), 0.7*nrow(df))
+train <- df[train_index, ]
+test  <- df[-train_index, ]
+
+# KNN prediction
+k <- 5
+pred <- knn(
+  train = train[,1:2],
+  test  = test[,1:2],
+  cl    = train$Species,
+  k = k
+)
+
+test$Predicted <- pred
+
+# Accuracy
+accuracy <- mean(test$Predicted == test$Species)
+
+# Decision boundary grid
+x_range <- seq(min(df$Petal.Length)-0.5,
+               max(df$Petal.Length)+0.5,
+               length = 200)
+
+y_range <- seq(min(df$Petal.Width)-0.5,
+               max(df$Petal.Width)+0.5,
+               length = 200)
+
+grid <- expand.grid(
+  Petal.Length = x_range,
+  Petal.Width  = y_range
+)
+
+grid$Species <- knn(
+  train = train[,1:2],
+  test  = grid,
+  cl    = train$Species,
+  k = k
+)
+
+# Plot
+ggplot() +
+  geom_tile(data = grid,
+            aes(Petal.Length, Petal.Width, fill = Species),
+            alpha = 0.30) +
+  geom_point(data = train,
+             aes(Petal.Length, Petal.Width, color = Species),
+             size = 2) +
+  geom_point(data = test,
+             aes(Petal.Length, Petal.Width, color = Predicted),
+             shape = 4,
+             size = 4,
+             stroke = 1.5) +
+  labs(
+    title = paste("KNN Classification (k =", k, ")"),
+    subtitle = paste("Test Accuracy =", round(accuracy,3)),
+    x = "Petal Length",
+    y = "Petal Width",
+    color = "Class",
+    fill = "Decision Region"
+  ) +
+  theme_minimal()
+
+```
+
+## Example 1 from slides
+
+```{r}
+library(caret)
+library(rsample)
+
+Penguins <- read.csv("Penguins3.csv")
+
+set.seed(4050)
+
+P2 <- Penguins %>%
+  dplyr::select(c(2:5)) %>%
+  scale() %>%
+  cbind(Penguins[,1,drop=FALSE])
+
+P_split <- initial_split(P2, prop = 0.75) 
+
+# Extract the training and testing data frames
+train_data <- training(P_split)
+test_data <- testing(P_split)
+
+
+# k = 2 
+
+pred0 <- knn(
+  train = train_data[,1:4],
+  test  = test_data[,1:4],
+  cl    = train_data$species,
+  k = 2
+)
+
+confusionMatrix(pred0,factor(test_data$species))
+
+
+# k = 3
+
+
+
+
+
+```
+
+## Illustrative Example 2
+
+```{r}
+
+
+cv <- trainControl(
+  method = "repeatedcv", 
+  number = 10, 
+  repeats = 5,
+  classProbs = TRUE
+)
+
+# Create a hyperparameter grid search
+hyper_grid <- expand.grid(
+  k = floor(seq(1, nrow(train)/3, length.out = 30))
+)
+
+# Fit knn model and perform grid search
+knn_grid <- train(
+  Species~., 
+  data = train, 
+  method = "knn", 
+  trControl = cv, 
+  tuneGrid = hyper_grid,
+  metric = "Accuracy"
+)
+
+knn_grid
+ggplot(knn_grid)
+
+
+## Testing ##
+
+predIE2 <- knn(train = train[,1:2],
+  test  = test[,1:2],
+  cl    = train$Species,
+  k = 6
+  
+)
+
+confusionMatrix(predIE2,test$Species)
+
+```
+
+## Example 2 from slides
+
+```{r}
+
+set.seed(4050)
+
+
+```
+
+## Illustrative Example 3
+
+```{r}
+
+library(caret)
+
+set.seed(123)
+
+# Load data
+data(iris)
+
+# Train/Test split
+train_index <- createDataPartition(iris$Petal.Length, p = 0.7, list = FALSE)
+
+train <- iris[train_index, ]
+test  <- iris[-train_index, ]
+
+# Cross-validation setup
+cv <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 5
+)
+
+# Hyperparameter grid
+hyper_grid <- expand.grid(
+  k = seq(1, 25, by = 2)
+)
+
+# Train kNN regression model
+knn_model <- train(
+  Petal.Length ~ .,
+  data = train,
+  method = "knn",
+  trControl = cv,
+  tuneGrid = hyper_grid,
+  metric = "RMSE",
+  preProcess = c("center","scale")
+)
+
+knn_model
+plot(knn_model)
+
+# Does it work?
+
+pred <- predict(knn_model, newdata = test)
+RMSE(pred, test$Petal.Length)
+R2(pred, test$Petal.Length)
+
+plot(test$Petal.Length, pred,
+     xlab = "Observed Petal Length",
+     ylab = "Predicted Petal Length",
+     main = "kNN Regression: Iris Dataset")
+abline(0,1,col="red",lwd=2)
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+set.seed(4050)
+
+Wages <- read.csv("Wages.csv")
+
+
+W2 <- Wages %>%
+  dplyr::select(c(7:12)) %>%
+  scale() %>%
+  cbind(Wages[,c(2,4:6),drop=FALSE])
+
+W_split <- initial_split(W2, prop = 0.75) 
+
+# Extract the training and testing data frames
+W_train <- training(W_split)
+W_test <- testing(W_split)
+
+
+```
+
+## Illustrative Example 4
+
+```{r}
+
+
+library(kknn)
+library(caret)
+
+set.seed(4050)
+
+# Load data
+data(iris)
+
+# Train/test split
+train_index <- createDataPartition(iris$Petal.Length, p = 0.7, list = FALSE)
+
+train <- iris[train_index, ]
+test  <- iris[-train_index, ]
+
+# Cross-validation
+cv <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 5
+)
+
+# Hyperparameter grid
+hyper_grid <- expand.grid(
+  kmax = seq(3, 25, 2),      # number of neighbors
+  distance = c(1,2),         # 1 = Manhattan, 2 = Euclidean
+  kernel = "rectangular"     # uniform weighting
+)
+
+# Train model
+kknn_model <- train(
+  Petal.Length ~ Sepal.Length + Sepal.Width + Petal.Width + Species,
+  data = train,
+  method = "kknn",
+  trControl = cv,
+  tuneGrid = hyper_grid,
+  metric = "RMSE",
+  preProcess = c("center","scale")
+)
+
+kknn_model
+```
+
+## Example 4 from slides
+
+```{r}
+
+air <- read.csv("air.csv")
+
+air.complete <- air[complete.cases(air), ]
+
+air.missing <- air[!complete.cases(air), ]
+
+
+```

@@ -1,0 +1,470 @@
+---
+title: "ADSC4050 Bagging Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Example 1 from slides
+
+```{r}
+
+
+library(dplyr)
+library(infer)
+
+# sample <- rlnorm(n,meanlog = mu, sdlog = sd)
+
+# Bootsample <- sample %>% 
+# rep_sample_n(size = nrow(sample), replace = TRUE, reps = 1000)  
+# 
+#  <- Bootsample %>% 
+#   group_by(replicate) %>% 
+#   summarize(median_value = )
+# 
+# 
+# hist(Medians$median_value)
+
+
+# bounds <- bootstrapped.values %>%
+# dplyr::select(values)%>%
+# pull()%>%
+# quantile(c(0.025, 0.975))
+
+```
+
+## Illustrative Example 1
+
+```{r}
+
+
+library(ggplot2)
+library(rpart)
+library(patchwork)
+
+set.seed(3040)
+
+# # simulate data
+# n <- 250
+# x <- runif(n, 0, 4.5)
+# 
+# truth_fun <- function(x) {
+#   ifelse(
+#     x < 2,
+#     0.8*sin(2*x),
+#     -0.8 + 0.4*sin(5*x)
+#   )
+# }
+# 
+# y <- truth_fun(x) + rnorm(n, sd = 0.25)
+# 
+# df <- data.frame(x, y)
+# 
+# # prediction grid
+# grid <- data.frame(
+#   x = seq(min(df$x), max(df$x), length.out = 400)
+# )
+# 
+# 
+# bag_models <- function(data, fit_fun, B = 100) {
+# 
+#   preds <- matrix(NA, nrow = nrow(grid), ncol = B)
+# 
+#   for (b in 1:B) {
+# 
+#     boot_id <- sample(nrow(data), replace = TRUE)
+#     boot_data <- data[boot_id, ]
+# 
+#     model <- fit_fun(boot_data)
+# 
+#     preds[, b] <- predict(model, newdata = grid)
+#   }
+# 
+#   preds
+# }
+# 
+# 
+# poly_fit <- function(d) {
+#   lm(y ~ poly(x, 3), data = d)
+# }
+# 
+# poly_preds <- bag_models(df, poly_fit, B = 100)
+# 
+# 
+# 
+# tree_fit <- function(d) {
+#   rpart(
+#     y ~ x,
+#     data = d,
+#     control = rpart.control(
+#       cp = 0.005,
+#       minsplit = 5,
+#       maxdepth = 30
+#     )
+#   )
+# }
+# 
+# tree_preds <- bag_models(df, tree_fit, B = 100)
+# 
+# 
+# plot_bagging <- function(pred_matrix, title) {
+# 
+#   pred_df <- data.frame(
+#     x = rep(grid$x, ncol(pred_matrix)),
+#     yhat = as.vector(pred_matrix),
+#     model = rep(1:ncol(pred_matrix), each = nrow(grid))
+#   )
+# 
+#   avg_pred <- rowMeans(pred_matrix)
+# 
+#   ggplot(df, aes(x, y)) +
+#     geom_point(alpha = 0.3, colour = "grey50") +
+# 
+#     # individual bootstrap fits
+#     geom_line(data = pred_df,
+#               aes(x, yhat, group = model),
+#               colour = "black",
+#               alpha = 0.15) +
+# 
+#     # bagged prediction
+#     geom_line(
+#       data = data.frame(x = grid$x, yhat = avg_pred),
+#       aes(x, yhat),
+#       colour = "red",
+#       linewidth = 1.3
+#     ) +
+# 
+#     labs(title = title, y = "Response") +
+#     theme_minimal()
+# }
+# 
+# 
+# p_poly <- plot_bagging(poly_preds, "A) Polynomial regression")
+# p_tree <- plot_bagging(tree_preds, "C) Regression trees")
+# 
+# p_poly | p_tree
+```
+
+## Illustrative Example 2
+
+```{r}
+
+# ============================================================
+# Bagging animation: regression trees appearing one-by-one
+# ============================================================
+
+# Packages
+library(ggplot2)
+library(rpart)
+library(gganimate)
+library(gifski)
+library(transformr)
+
+set.seed(4050)
+
+# ------------------------------------------------------------
+# 1. True function (your piecewise example)
+# ------------------------------------------------------------
+truth_fun <- function(x) {
+  ifelse(
+    x < 2,
+    0.8*sin(2*x),
+    -0.8 + 0.4*sin(5*x)
+  )
+}
+
+# ------------------------------------------------------------
+# 2. Simulate data
+# ------------------------------------------------------------
+n <- 250
+x <- runif(n, 0, 4.5)
+y <- truth_fun(x) + rnorm(n, sd = 0.25)
+
+df <- data.frame(x, y)
+
+# prediction grid
+grid <- data.frame(
+  x = seq(min(df$x), max(df$x), length.out = 400)
+)
+
+truth_df <- data.frame(
+  x = grid$x,
+  y = truth_fun(grid$x)
+)
+
+# ------------------------------------------------------------
+# 3. Bootstrap regression trees
+# ------------------------------------------------------------
+B <- 100   # number of bootstrap models
+
+pred_list <- vector("list", B)
+
+for (b in 1:B) {
+
+  boot_id <- sample(nrow(df), replace = TRUE)
+  boot_data <- df[boot_id, ]
+
+  fit <- rpart(
+    y ~ x,
+    data = boot_data,
+    control = rpart.control(
+      cp = 0.005,
+      minsplit = 5,
+      maxdepth = 30
+    )
+  )
+
+  pred_list[[b]] <- predict(fit, newdata = grid)
+}
+
+pred_mat <- do.call(cbind, pred_list)
+
+# ------------------------------------------------------------
+# 4. Dataset for individual bootstrap fits
+# ------------------------------------------------------------
+anim_df <- data.frame()
+
+for (b in 1:B) {
+  tmp <- data.frame(
+    x = rep(grid$x, b),
+    yhat = as.vector(pred_mat[, 1:b]),
+    model = rep(1:b, each = nrow(grid)),
+    frame = b
+  )
+  anim_df <- rbind(anim_df, tmp)
+}
+
+# ------------------------------------------------------------
+# 5. Running (bagged) average using cumulative means
+# ------------------------------------------------------------
+running_mean <- t(apply(pred_mat, 1, cumsum)) /
+  matrix(1:B, nrow = nrow(pred_mat), ncol = B, byrow = TRUE)
+
+avg_df <- data.frame(
+  x = rep(grid$x, B),
+  yhat = as.vector(running_mean),
+  frame = rep(1:B, each = nrow(grid))
+)
+
+# ------------------------------------------------------------
+# 6. Build animation
+# ------------------------------------------------------------
+p <- ggplot(df, aes(x, y)) +
+  geom_point(alpha = 0.3, colour = "grey50") +
+
+  # true function
+  geom_line(
+    data = truth_df,
+    aes(x, y),
+    colour = "blue",
+    linewidth = 1.2
+  ) +
+
+  # individual bootstrap trees
+  geom_step(
+    data = anim_df,
+    aes(x, yhat, group = model),
+    colour = "black",
+    alpha = 0.15
+  ) +
+
+  # running bagged prediction
+  geom_line(
+    data = avg_df,
+    aes(x, yhat),
+    colour = "red",
+    linewidth = 1.4
+  ) +
+
+  labs(
+    title = "Bagging Regression Trees",
+    subtitle = "Bootstrap models used: {closest_state}",
+    y = "Response"
+  ) +
+  theme_minimal() +
+
+  transition_states(frame, transition_length = 1, state_length = 1) +
+  ease_aes("linear")
+
+# ------------------------------------------------------------
+# 7. Render animation
+# ------------------------------------------------------------
+animate(
+  p,
+  fps = 10,
+  width = 800,
+  height = 500,
+  renderer = gifski_renderer()
+)
+```
+
+## Example 2 from slides
+
+```{r}
+
+library(ipred)
+library(rpart.plot)
+library(caret)
+library(rsample)
+
+data("ptitanic")
+
+set.seed(4050)
+
+titanic_split <- initial_split(ptitanic, prop = 0.75) 
+
+# Extract the training and testing data frames
+train_data <- training(titanic_split)
+test_data <- testing(titanic_split)
+
+
+
+# model <- bagging(
+# formula = response ~ X1+X2+...XP,
+# data = df,
+# nbagg = b,
+# coob = TRUE,
+# control = rpart.control(minsplit = 2, cp = 0)
+# )
+
+# confusionMatrix(ptitanic$survived, predict(tree, type="class"))
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+library(caret)
+
+# model <- train(
+# response ~ X1+X2+...+XP,
+# data = train,
+# method = "treebag",
+# trControl = trainControl(method = "cv", number = 10),
+# nbagg = b,
+# control = rpart.control(minsplit = 2, cp = 0)
+# )
+
+# model
+# model$resample
+
+
+```
+
+## Illustrative Example 3
+
+```{r}
+
+library(foreach)
+library(doParallel)
+
+set.seed(4050)
+
+# Wages <- read.csv("Wages.csv")
+# 
+# 
+# Wtrain <-  Wages %>% dplyr::sample_frac(0.80)
+# Wtest  <- dplyr::anti_join(Wages, Wtrain,by="ID")
+
+
+
+
+cl <- makeCluster(8) # use 8 workers
+registerDoParallel(cl) # register the parallel backend
+
+# Fit trees in parallel and compute predictions on the test set
+predictions <- foreach(
+  icount(160), 
+  .packages = "rpart", 
+  .combine = cbind
+  ) %dopar% {
+    # bootstrap copy of training data
+    index <- sample(nrow(Wtrain), replace = TRUE)
+    train_boot <- Wtrain[index, ]  
+  
+    # fit tree to bootstrap copy
+    bagged_tree <- rpart(
+      Salary ~ Job+Location+Province+FatherEducation+
+        MotherEducation+GPA+Age+Experience+Education, 
+      control = rpart.control(minsplit = 2, cp = 0),
+      data = train_boot
+      ) 
+    
+    predict(bagged_tree, newdata = Wtest)
+}
+
+predictions[1:5, 1:7]
+
+
+predictions %>%
+  as.data.frame() %>%
+  mutate(
+    observation = 1:n(),
+    actual = Wtest$Salary) %>%
+  tidyr::gather(tree, predicted, -c(observation, actual)) %>%
+  group_by(observation) %>%
+  mutate(tree = stringr::str_extract(tree, '\\d+') %>% as.numeric()) %>%
+  ungroup() %>%
+  arrange(observation, tree) %>%
+  group_by(observation) %>%
+  mutate(avg_prediction = cummean(predicted)) %>%
+  group_by(tree) %>%
+  summarize(RMSE = RMSE(avg_prediction, actual)) %>%
+  ggplot(aes(tree, RMSE)) +
+  geom_line() +
+  xlab('Number of trees')
+
+
+# Shutdown parallel cluster
+stopCluster(cl)
+
+```
+
+
+## Example 4
+
+```{r}
+
+library(vip)
+
+
+```
+
+
+## Illustrative Example 4
+
+```{r}
+
+set.seed(4050)
+
+
+for (b in 1:6) {
+
+  # bootstrap sample
+  boot_id <- sample(nrow(Wages), replace = TRUE)
+  boot_data <- Wages[boot_id, ]
+
+  # fit tree
+  tree_fit <- rpart(Salary~Job+Location+
+                      Province+FatherEducation+
+                      MotherEducation+GPA+Age+
+                      Experience+Education,
+    data = boot_data,
+    control = rpart.control(cp = 0.01)
+  )
+
+  # plot tree
+  rpart.plot(
+    tree_fit,
+    main = paste("Regression Tree", b),
+    box.palette = "Blues",
+    shadow.col = "gray",
+    nn = TRUE
+  )
+}
+
+
+
+```
+

@@ -1,0 +1,99 @@
+---
+title: "ADSC4050 k-Means Clustering Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Illustrative Example 1
+
+```{r}
+
+library(plotly)
+data(iris)
+
+
+fig <- plot_ly(iris, x = ~Petal.Length, y = ~Petal.Width, z = ~Sepal.Width, color = ~Species, colors = c('black', 'blue', 'orange'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'Petal Length'),
+                     yaxis = list(title = 'Petal Width'),
+                     zaxis = list(title = 'Sepal Width')))
+
+fig
+
+
+
+
+```
+
+## Illustrative Example 2
+
+```{r}
+
+# set.seed(4050)
+# 
+# library(animation)
+# 
+# kmeans.ani(x = iris[, 1:2], centers = 3)
+
+
+```
+
+## Example 1 from slides
+
+```{r}
+
+# kmeans(iris[,1:4],centers = 3)
+
+```
+
+## Example 2 from slides
+
+```{r}
+
+# kmeans(iris[,1:4],centers = 3,nstart=10)
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+wss <- vector()
+
+
+for (i in 1:10) {
+  wss[i] <- sum(kmeans(iris[,1:4], centers = i, nstart = 25)$withinss)
+}
+
+
+plot(1:10, wss,
+     type = "b",
+     xlab = "Number of Clusters",
+     ylab = "Total Within-Cluster Sum of Squares (WCSS)",
+     main = "Elbow Plot")
+
+
+```
+
+## Example 4 from slides
+
+```{r}
+
+# library(vegan)
+# 
+# Result <- cascadeKM(, inf.gr = , sup.gr = )
+# plot(Result)
+```
+
+## Example 5 from slides
+
+```{r}
+
+# library(cluster)
+# 
+# 
+# fanny(data,k=k)
+# 
+# plot()
+```

@@ -1,0 +1,73 @@
+---
+title: "ADSC4050 Linear Discriminant Analysis Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Example 1 from slides
+
+```{r}
+
+library(MASS)
+library(dplyr)
+
+# Penguins <- read.csv("Penguins2.csv")
+# 
+# P2 <- Penguins %>% 
+#   dplyr::select(c(2:5)) %>% 
+#   scale() %>% 
+#   cbind(Penguins[,1,drop=FALSE])
+
+
+## EDA ##
+
+library(plotly)
+
+# pairs(P2[,1:4])
+# 
+# fig <- plot_ly(P2, x = ~bill_depth_mm, y = ~flipper_length_mm, z = ~body_mass_g, color = ~species, colors = c('black', 'blue', 'orange'))
+# fig <- fig %>% add_markers()
+# fig <- fig %>% layout(scene = list(xaxis = list(title = 'Scaled Bill Depth'),
+#                      yaxis = list(title = 'Scaled Flipper Length'),
+#                      zaxis = list(title = 'Scaled Body Mass')))
+# 
+# fig
+
+## LDA ##
+
+lda(species ~ ., data = P2)
+```
+
+## Example 2 from slides
+
+```{r}
+
+
+# plot(A)
+# 
+# 
+# plot(A, dimen = 1, type = "both")
+```
+
+## Example 3 from slides
+
+```{r}
+
+library(caret)
+
+# set.seed(4050)
+# 
+# P2$ID <- 1:nrow(P2)
+# train <- P2 %>% dplyr::sample_frac(.75)
+# test  <- dplyr::anti_join(P2, train, by = 'ID')
+# 
+# predict(model,test)
+# 
+
+# table(test$species,
+#          predict(model,test)$class)
+# 
+# confusionMatrix(factor(test$species),predict(model,test)$class)
+
+```

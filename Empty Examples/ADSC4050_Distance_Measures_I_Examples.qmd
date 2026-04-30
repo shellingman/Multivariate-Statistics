@@ -1,0 +1,54 @@
+---
+title: "ADSC4050 Distance Measures I Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Example 1 from slides
+
+```{r}
+
+# A <- matrix(1:9, nrow = 3)
+
+
+
+
+## 2 ##
+
+# Evalues <- E$values
+# Evectors <- E$vectors
+# A %*% Evectors[,1]
+# Evalues[1] * Evectors[,1]
+```
+
+## Example 2 from slides
+
+```{r}
+
+# sum(diag(A)) or sum(Eigenvalues)
+# det(A) or prod(Eigenvalues)
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+# eigen()
+# svd()
+
+```
+
+## Example 4 from slides
+
+```{r}
+
+```
+
+## Example 5 from slides
+
+```{r}
+
+
+```

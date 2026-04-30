@@ -1,0 +1,81 @@
+---
+title: "ADSC4050 Introduction to Multivariate Statistics Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Example 1 from slides
+
+```{r}
+
+# A <- matrix(data = c(3,-1,0,4,5,2), nrow = 3)
+# B <- matrix(data = c(4,1,-2,8,-3,6), nrow = 3)
+# C <- A + B
+
+
+```
+
+## Example 2 from slides
+
+```{r}
+
+# A <- matrix(data = c(1,2,3,0,2,0,-5,3), nrow = 2)
+# B <- matrix(data = c(1,2,3,0,2,0,-5,3), nrow = 2)
+# k <- 3
+# c <- 5
+
+
+
+# C from previous example
+
+# C * A
+
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+
+# A <- matrix(data = c(3,1,-2,2,1,-1,0,2), nrow = 4, byrow = T)
+# B <- matrix(data = c(1,-2,2,1,0,3), nrow =  2, byrow = T)
+
+```
+
+## Example 4 from slides
+
+```{r}
+# 
+# A <- matrix(data = c(1,2,3,0,3,-2), nrow = 2)
+# B <- matrix(data = c(1,3,-1,-2,2,3,2,2,3), nrow = 3)
+
+B %*% t(A)
+
+```
+
+## Example 5 from slides
+
+```{r}
+
+# A <- matrix(data = c(1,2,2,2,4,3,2,3,-4), nrow = 3) 
+# B <- matrix(data = c(1,3,-1,-2,2,3,2,2,3), nrow = 3)
+# 
+# A
+# t(A)
+# A - t(A)
+
+```
+
+## Example 6 from slides
+
+```{r}
+
+# A <- matrix(data = c(1,2,2,2,4,3,2,3,-4), nrow = 3)
+# B <- matrix(data = c(1,2,3,2,3,1,3,2,1), nrow = 3)
+
+
+```
+
+## 

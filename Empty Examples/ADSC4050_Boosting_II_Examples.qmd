@@ -1,0 +1,764 @@
+---
+title: "ADSC4050 Boosting Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+# Part I
+
+## Illustrative Example 1
+
+```{r}
+# ============================================================
+# Gradient Boosting animation (sequential learning)
+# ============================================================
+
+library(ggplot2)
+library(rpart)
+library(gganimate)
+library(gifski)
+library(transformr)
+library(dplyr)
+
+set.seed(4050)
+
+# ------------------------------------------------------------
+# 1. True function
+# ------------------------------------------------------------
+truth_fun <- function(x) {
+  ifelse(
+    x < 2,
+    0.8*sin(2*x),
+    -0.8 + 0.4*sin(5*x)
+  )
+}
+
+# ------------------------------------------------------------
+# 2. Simulate data
+# ------------------------------------------------------------
+n <- 250
+x <- runif(n, 0, 4.5)
+y <- truth_fun(x) + rnorm(n, sd = 0.35)
+
+df <- data.frame(x, y)
+
+grid <- data.frame(
+  x = seq(min(df$x), max(df$x), length.out = 400)
+)
+
+truth_df <- data.frame(
+  x = grid$x,
+  y = truth_fun(grid$x)
+)
+
+# ------------------------------------------------------------
+# 3. Gradient Boosting loop
+# ------------------------------------------------------------
+M <- 100          # number of boosting iterations
+lr <- 0.1        # learning rate
+
+# initialize model (constant)
+f_hat <- rep(mean(df$y), nrow(df))
+f_hat_grid <- rep(mean(df$y), nrow(grid))
+
+# store predictions over time
+boost_mat <- matrix(NA, nrow = nrow(grid), ncol = M)
+
+# store individual learners (for visualization)
+tree_list <- vector("list", M)
+
+for (m in 1:M) {
+
+  # compute residuals
+  residuals <- df$y - f_hat
+
+  # fit weak learner
+  tree <- rpart(
+    residuals ~ x,
+    data = df,
+    control = rpart.control(
+      cp = 0.001,
+      maxdepth = 2   # shallow trees = classic boosting
+    )
+  )
+
+  tree_list[[m]] <- tree
+
+  # predictions
+  pred_train <- predict(tree, newdata = df)
+  pred_grid  <- predict(tree, newdata = grid)
+
+  # update model
+  f_hat <- f_hat + lr * pred_train
+  f_hat_grid <- f_hat_grid + lr * pred_grid
+
+  boost_mat[, m] <- f_hat_grid
+}
+
+# ------------------------------------------------------------
+# 4. Build animation data (ensemble prediction)
+# ------------------------------------------------------------
+boost_df <- data.frame(
+  x = rep(grid$x, M),
+  yhat = as.vector(boost_mat),
+  frame = rep(1:M, each = nrow(grid))
+)
+
+# ------------------------------------------------------------
+# 5. Build data for current tree (residual learner)
+# ------------------------------------------------------------
+tree_df <- data.frame()
+
+for (m in 1:M) {
+
+  pred <- predict(tree_list[[m]], newdata = grid)
+
+  tmp <- data.frame(
+    x = grid$x,
+    yhat = pred,
+    frame = m
+  )
+
+  tree_df <- rbind(tree_df, tmp)
+}
+
+# ------------------------------------------------------------
+# 6. Plot + animation
+# ------------------------------------------------------------
+p <- ggplot(df, aes(x, y)) +
+  geom_point(alpha = 0.3, colour = "grey50") +
+
+  # true function
+  geom_line(
+    data = truth_df,
+    aes(x, y),
+    colour = "blue",
+    linewidth = 1.2
+  ) +
+
+  # current weak learner (residual fit)
+  geom_step(
+    data = tree_df,
+    aes(x, yhat),
+    colour = "black",
+    alpha = 0.6
+  ) +
+
+  # boosted model
+  geom_line(
+    data = boost_df,
+    aes(x, yhat),
+    colour = "red",
+    linewidth = 1.4
+  ) +
+
+  labs(
+    title = "Gradient Boosting (Sequential Learning)",
+    subtitle = "Iteration: {closest_state}",
+    y = "Response"
+  ) +
+  theme_minimal() +
+
+  transition_states(frame) +
+  ease_aes("linear")
+
+# ------------------------------------------------------------
+# 7. Render animation
+# ------------------------------------------------------------
+animate(
+  p,
+  fps = 5,
+  width = 800,
+  height = 500,
+  renderer = gifski_renderer()
+)
+```
+
+## Illustrative Example 2
+
+```{r}
+
+library(gbm)
+library(rsample)
+library(caret)
+
+set.seed(4050)
+
+iris_split <- initial_split(iris, prop = 0.75) 
+
+# Extract the training and testing data frames
+iris_train <- training(iris_split)
+iris_test <- testing(iris_split)
+
+
+
+model.gbm1 <- gbm(
+  formula = Petal.Length ~.,
+  data = iris_train,
+  distribution = "gaussian",  # SSE loss function
+  n.trees = 5000,
+  shrinkage = 0.1,
+  interaction.depth = 3,
+  n.minobsinnode = 10,
+  cv.folds = 10
+)
+
+
+best <- which.min(model.gbm1$cv.error) # Get best number of trees
+best
+
+sqrt(model.gbm1$cv.error[best]) # compute RMSE
+
+# Plot
+gbm.perf(model.gbm1, method = "cv")
+
+# Testing set
+
+postResample(predict(model.gbm1,iris_test), iris_test$Petal.Length)
+
+```
+
+## Example 1 from slides
+
+```{r}
+
+library(caret)
+library(rsample)
+library(dplyr)
+
+set.seed(4050)
+
+Wages <- read.csv("Wages.csv")
+
+# 1 Perform a 75/25 train/test split.
+
+Wages <- Wages[,2:12] 
+  
+Wages <- Wages %>% # Fixed
+  mutate_if(is.character, as.factor)
+
+W_split <- initial_split(Wages, prop = 0.75) 
+
+# Extract the training and testing data frames
+W_train <- training(W_split)
+W_test <- testing(W_split)
+
+# 2 Adjust the code from Illustrative Example 1 to construct a GBM model
+# with Salary as the response variable (ignore the ID column).
+
+model.gbmE1 <- gbm(
+  formula = Salary ~ .,
+  data = W_train,
+  distribution = "gaussian",  # SSE loss function
+  n.trees = 5000,
+  shrinkage = 0.1,
+  interaction.depth = 3,
+  n.minobsinnode = 10,
+  cv.folds = 10
+)
+
+
+# 3 What is the optimal number of trees?
+
+best <- which.min(model.gbmE1$cv.error) # Get best number of trees
+best
+
+sqrt(model.gbmE1$cv.error[best]) # compute RMSE
+
+# 4 Plot the progression of the number of trees.
+
+gbm.perf(model.gbmE1, method = "cv")
+
+
+# 5 Does our model predict the test set well?
+
+postResample(predict(model.gbmE1,W_test), W_test$Salary)
+```
+
+## Illustrative Example 3 A
+
+```{r}
+
+# create grid search
+hyper_grid <- expand.grid(
+  learning_rate = c(0.3, 0.1, 0.05, 0.01, 0.005),
+  RMSE = NA,
+  trees = NA,
+  time = NA
+)
+
+# execute grid search
+for(i in seq_len(nrow(hyper_grid))) {
+
+  # fit gbm
+  set.seed(4050)  # for reproducibility
+  train_time <- system.time({
+    m <- gbm(
+      formula = Petal.Length ~ .,
+      data = iris_train,
+      distribution = "gaussian",
+      n.trees = 5000, 
+      shrinkage = hyper_grid$learning_rate[i], 
+      interaction.depth = 3, 
+      n.minobsinnode = 10,
+      cv.folds = 10 
+   )
+  })
+  
+  # add SSE, trees, and training time to results
+  hyper_grid$RMSE[i]  <- sqrt(min(m$cv.error))
+  hyper_grid$trees[i] <- which.min(m$cv.error)
+  hyper_grid$Time[i]  <- train_time[["elapsed"]]
+
+}
+
+# results
+arrange(hyper_grid, RMSE)
+
+
+```
+
+## Illustrative Example 3 B
+
+```{r}
+hyper_grid <- expand.grid(
+  n.trees = 6000,
+  shrinkage = 0.010,
+  interaction.depth = c(1, 3, 5, 7),
+  n.minobsinnode = c(3, 5, 10, 15)
+)
+
+# create model fit function
+model_fit <- function(n.trees, shrinkage, interaction.depth, n.minobsinnode) {
+  set.seed(123)
+  m <- gbm(
+    formula = Petal.Length ~ .,
+      data = iris_train,
+    distribution = "gaussian",
+    n.trees = n.trees,
+    shrinkage = shrinkage,
+    interaction.depth = interaction.depth,
+    n.minobsinnode = n.minobsinnode,
+    cv.folds = 10
+  )
+  # compute RMSE
+  sqrt(min(m$cv.error))
+}
+
+# perform search grid with functional programming
+hyper_grid$rmse <- purrr::pmap_dbl(
+  hyper_grid,
+  ~ model_fit(
+    n.trees = ..1,
+    shrinkage = ..2,
+    interaction.depth = ..3,
+    n.minobsinnode = ..4
+    )
+)
+
+# results
+arrange(hyper_grid, rmse)
+
+
+# Generalize?
+
+model.gbm2 <- gbm(
+  formula = Petal.Length ~.,
+  data = iris_train,
+  distribution = "gaussian",  # SSE loss function
+  n.trees = 6000,
+  shrinkage = 0.01,
+  interaction.depth = 5,
+  n.minobsinnode = 3,
+  cv.folds = 10
+)
+
+postResample(predict(model.gbm1,iris_test), iris_test$Petal.Length)
+postResample(predict(model.gbm2,iris_test), iris_test$Petal.Length)
+```
+
+## Example 2 from slides
+
+```{r}
+
+set.seed(4050)
+## A ##
+
+# create grid search
+hyper_grid <- expand.grid(
+  learning_rate = c(0.3, 0.1, 0.05, 0.01, 0.005),
+  RMSE = NA,
+  trees = NA,
+  time = NA
+)
+
+# execute grid search
+for(i in seq_len(nrow(hyper_grid))) {
+
+  # fit gbm
+  set.seed(4050)  # for reproducibility
+  train_time <- system.time({
+    m <- gbm(
+      formula = Salary ~ .,
+      data = W_train,
+      distribution = "gaussian",
+      n.trees = 5000, 
+      shrinkage = hyper_grid$learning_rate[i], 
+      interaction.depth = 3, 
+      n.minobsinnode = 10,
+      cv.folds = 10 
+   )
+  })
+  
+  # add SSE, trees, and training time to results
+  hyper_grid$RMSE[i]  <- sqrt(min(m$cv.error))
+  hyper_grid$trees[i] <- which.min(m$cv.error)
+  hyper_grid$Time[i]  <- train_time[["elapsed"]]
+
+}
+
+# results
+arrange(hyper_grid, RMSE)
+
+
+
+
+
+## B ##
+
+hyper_grid <- expand.grid(
+  n.trees = 6000,
+  shrinkage = 0.010,
+  interaction.depth = c(1, 3, 5, 7),
+  n.minobsinnode = c(3, 5, 10, 15)
+)
+
+# create model fit function
+model_fit <- function(n.trees, shrinkage, interaction.depth, n.minobsinnode) {
+  set.seed(123)
+  m <- gbm(
+    formula = Salary ~ .,
+      data = W_train,
+    distribution = "gaussian",
+    n.trees = n.trees,
+    shrinkage = shrinkage,
+    interaction.depth = interaction.depth,
+    n.minobsinnode = n.minobsinnode,
+    cv.folds = 10
+  )
+  # compute RMSE
+  sqrt(min(m$cv.error))
+}
+
+# perform search grid with functional programming
+hyper_grid$rmse <- purrr::pmap_dbl(
+  hyper_grid,
+  ~ model_fit(
+    n.trees = ..1,
+    shrinkage = ..2,
+    interaction.depth = ..3,
+    n.minobsinnode = ..4
+    )
+)
+
+# results
+arrange(hyper_grid, rmse)
+
+
+# Generalize?
+
+model.gbmE2 <- gbm(
+  formula = Salary ~.,
+  data = W_train,
+  distribution = "gaussian",  # SSE loss function
+  n.trees = 6000,
+  shrinkage = 0.01,
+  interaction.depth = 1,
+  n.minobsinnode = 3,
+  cv.folds = 10
+)
+
+postResample(predict(model.gbmE1,W_test), W_test$Salary)
+postResample(predict(model.gbmE2,W_test), W_test$Salary)
+```
+
+# Part II
+
+## Illustrative Example 1
+
+```{r}
+
+library(h2o)
+
+set.seed(4050)
+
+h2o.no_progress()  # turn off progress bars for brevity
+h2o.init(max_mem_size = "5g")
+
+# convert data to h2o object
+data.h2o <- as.h2o(iris)
+
+# Identify predictors and response 
+response <- "Petal.Length"
+predictors <- setdiff(names(data.h2o), response)
+
+# Train and test split
+splits <- h2o.splitFrame(data.h2o, ratios = 0.75, seed = 4050)
+
+train_h2o <- splits[[1]]
+test_h2o  <- splits[[2]]
+
+
+# refined hyperparameter grid
+hyper_grid <- list(
+  sample_rate = c(0.5, 0.75, 1),              # row subsampling
+  col_sample_rate = c(0.5, 0.75, 1),          # col subsampling for each split
+  col_sample_rate_per_tree = c(0.5, 0.75, 1)  # col subsampling for each tree
+)
+
+# random grid search strategy
+search_criteria <- list(
+  strategy = "RandomDiscrete",
+  stopping_metric = "mse",
+  stopping_tolerance = 0.001,   
+  stopping_rounds = 10,         
+  max_runtime_secs = 60*60      
+)
+
+# perform grid search 
+grid <- h2o.grid(
+  algorithm = "gbm",
+  grid_id = "gbm_grid",
+  x = predictors, 
+  y = response,
+  training_frame = train_h2o,
+  hyper_params = hyper_grid,
+  ntrees = 6000,
+  learn_rate = 0.01, # previous model
+  max_depth = 5, # previous model
+  min_rows = 3, # previous model
+  nfolds = 10,
+  stopping_rounds = 10,
+  stopping_tolerance = 0,
+  search_criteria = search_criteria,
+  seed = 4050
+)
+
+# collect the results and sort by our model performance metric of choice
+grid_perf <- h2o.getGrid(
+  grid_id = "gbm_grid", 
+  sort_by = "mse", 
+  decreasing = FALSE
+)
+
+grid_perf
+
+
+# Save the best model 
+best_model <- h2o.getModel(grid_perf@model_ids[[1]])
+
+# Performance metrics (C-V)
+h2o.performance(model = best_model, xval = TRUE)
+
+# Predictions 
+predictions <- h2o.predict(object = best_model, newdata = test_h2o)
+
+
+# Evaluate
+postResample(as.vector(predictions),as.vector(test_h2o$Petal.Length))
+```
+
+## Example 1 from slides
+
+```{r}
+
+set.seed(4050)
+
+Wages <- read.csv("Wages.csv")
+
+# 1 Perform a 75/25 train/test split.
+
+Wages <- Wages[,2:12] 
+  
+Wages <- Wages %>% # Fixed
+  mutate_if(is.character, as.factor)
+
+h2o.no_progress()  # turn off progress bars for brevity
+h2o.init(max_mem_size = "8g")
+
+# convert data to h2o object
+W.data.h2o <- as.h2o(Wages)
+
+# Identify predictors and response 
+response <- "Salary"
+predictors <- setdiff(names(W.data.h2o), response)
+
+# Train and test split
+splits <- h2o.splitFrame(W.data.h2o, ratios = 0.75, seed = 4050)
+
+W.train_h2o <- splits[[1]]
+W.test_h2o  <- splits[[2]]
+```
+
+## Illustrative Example 2
+
+```{r}
+
+library(xgboost)
+library(recipes)
+
+
+# Process data
+xgb_prep <- recipe(Petal.Length ~ ., data = iris_train) %>%
+  step_integer(all_nominal()) %>%
+  prep(training = iris_train, retain = TRUE) %>%
+  juice()
+
+X <- as.matrix(xgb_prep[setdiff(names(xgb_prep), "Petal.Length")])
+Y <- xgb_prep$Petal.Length
+
+# Convert to DMatrix
+dtrain <- xgb.DMatrix(data = X, label = Y)
+
+
+# Use hyperparameters that we already found I.E.1
+
+set.seed(4050)
+iris_xgb <- xgb.cv(
+  data = dtrain,
+  nrounds = 6000,
+  early_stopping_rounds = 50, 
+  nfold = 10,
+  params = list(
+    objective = "reg:squarederror",
+    eta = 0.01, # from I.E. 1
+    max_depth = 5, # from I.E. 1
+    min_child_weight = 3, # from I.E. 1
+    subsample = 0.75, # from I.E. 1
+    colsample_bytree = 1.0, # from I.E. 1
+    colsample_bylevel = 0.5), # from I.E. 1
+  verbose = 0
+)  
+
+# minimum test CV RMSE
+min(iris_xgb$evaluation_log$test_rmse_mean)
+
+
+
+#### 2 #####
+
+# hyperparameter grid
+hyper_grid <- expand.grid(
+    eta = 0.01, # from I.E. 1
+    max_depth = 5, # from I.E. 1
+    min_child_weight = 3, # from I.E. 1
+    subsample = 0.75, # from I.E. 1
+    colsample_bytree = 1.0, # from I.E. 1
+    colsample_bylevel = 0.5, # from I.E. 1
+  gamma = c(0, 1, 10, 100),
+  lambda = c(0, 0.1, 20),
+  alpha = c(0, 0.1, 20),
+  rmse = 0,          # a place to put RMSE results
+  trees = 0          # a place to put required number of trees
+)
+
+# grid search
+for(i in seq_len(nrow(hyper_grid))) {
+  set.seed(4050)
+  m <- xgb.cv(
+  data = dtrain,
+    nrounds = 4000,
+    early_stopping_rounds = 50, 
+    nfold = 10,
+    verbose = 0,
+    params = list( 
+      objective = "reg:squarederror",
+      eta = hyper_grid$eta[i], 
+      max_depth = hyper_grid$max_depth[i],
+      min_child_weight = hyper_grid$min_child_weight[i],
+      subsample = hyper_grid$subsample[i],
+      colsample_bytree = hyper_grid$colsample_bytree[i],
+      gamma = hyper_grid$gamma[i], 
+      lambda = hyper_grid$lambda[i], 
+      alpha = hyper_grid$alpha[i]
+    ) 
+  )
+  hyper_grid$rmse[i] <- min(m$evaluation_log$test_rmse_mean)
+  
+  # Safe assignment for trees
+  if (is.null(m$best_iteration)) {
+    hyper_grid$trees[i] <- nrow(m$evaluation_log)
+  } else {
+    hyper_grid$trees[i] <- m$best_iteration
+  }
+}
+
+# results
+hyper_grid %>%
+  filter(rmse > 0) %>%
+  arrange(rmse) %>%
+  glimpse() # No improvement!
+
+
+# Final Model
+params <- list(
+    objective = "reg:squarederror",
+    eta = 0.01, # from I.E. 1
+    max_depth = 5, # from I.E. 1
+    min_child_weight = 3, # from I.E. 1
+    subsample = 0.75, # from I.E. 1
+    colsample_bytree = 1.0, # from I.E. 1
+    colsample_bylevel = 0.5, # from I.E. 1
+  verbose = 0)
+
+
+# train final model
+xgb.fit.final <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 471, # from last step
+  verbose = 0
+)
+
+
+
+## Testing ##
+
+xgb_recipe <- recipe(Petal.Length ~ ., data = iris_train) %>%
+  step_integer(all_nominal())
+
+xgb_prep <- prep(xgb_recipe)
+
+train_processed <- bake(xgb_prep, iris_train)
+test_processed  <- bake(xgb_prep, iris_test)
+
+X_test <- as.matrix(test_processed[setdiff(names(test_processed), "Petal.Length")])
+dtest <- xgb.DMatrix(X_test)
+
+pred <- predict(xgb.fit.final, dtest)
+
+library(caret)
+postResample(pred, test_processed$Petal.Length)
+```
+
+## Example 2 from slides
+
+```{r}
+
+library(vip)
+
+vip(xgb.fit.final,type = "gain")
+
+
+vip(xgb.fit.final,type = "cover")
+
+
+vip(xgb.fit.final,type = "frequency")
+
+
+
+## Actual Example ##
+
+
+```

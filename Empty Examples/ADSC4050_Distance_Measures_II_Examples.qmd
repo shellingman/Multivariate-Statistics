@@ -1,0 +1,37 @@
+---
+title: "ADSC4050 Distance Measures II"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Example 1 from slides
+
+```{r}
+
+# Cities <- matrix(c(0,4,8,0,1,1,1,0,0),nrow = 3,byrow = T)
+# dist()
+
+```
+
+## Example 2 from slides
+
+```{r}
+
+# dist(A,method="manhattan")
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+```
+
+## Example 4 from slides
+
+```{r}
+
+# dist(m,method="minkowski",p=2)
+
+```

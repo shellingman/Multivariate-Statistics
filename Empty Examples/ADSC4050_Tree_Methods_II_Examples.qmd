@@ -1,0 +1,169 @@
+---
+title: "ADSC4050 Tree Methods II Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Illustrative Example 1
+
+```{r}
+
+library(rpart)
+library(rpart.plot)
+library(ggplot2)
+library(dplyr)
+
+# set.seed(4050)
+# 
+# n <- 400
+# df <- data.frame(x = runif(n, 0, 6.5))
+# df$y <- sin(df$x) + rnorm(n, sd = 0.4)
+# 
+# fit <- rpart(y ~ x, data = df)
+# 
+# 
+# plot_tree_regression <- function(model, data, xvar, yvar, n_grid = 1000) {
+# 
+#   # create prediction grid
+#   grid <- data.frame(
+#     x = seq(min(data[[xvar]]),
+#             max(data[[xvar]]),
+#             length.out = n_grid)
+#   )
+#   names(grid) <- xvar
+# 
+#   # tree predictions
+#   grid$pred <- predict(model, newdata = grid)
+# 
+#   ggplot(data, aes_string(xvar, yvar)) +
+#     geom_point(alpha = 0.3, colour = "grey40") +
+#     geom_step(data = grid,
+#               aes_string(xvar, "pred"),
+#               colour = "red",
+#               linewidth = 1.2) +
+#     theme_minimal()
+# }
+# 
+# 
+# plot_tree_regression(fit, df, "x", "y")
+# 
+# 
+# truth <- data.frame(
+#   x = seq(0, 6.5, length.out = 1000)
+# )
+# truth$y = sin(truth$x)
+# 
+# ggplot(df, aes(x, y)) +
+#   geom_point(alpha = 0.3, colour = "grey40") +
+#   geom_line(data = truth, aes(x, y), colour = "blue", linewidth = 1.2) +
+#   geom_step(
+#     data = transform(truth,
+#                      pred = predict(fit, newdata = truth)),
+#     aes(x, pred),
+#     colour = "red",
+#     linewidth = 1.2
+#   ) +
+#   theme_minimal()
+
+# rpart.plot(fit)
+
+```
+
+## Example 1 from slides
+
+```{r}
+# 
+# Wages <- read.csv("Wages.csv")
+# 
+# tree1 <- rpart(, method = "anova")
+# 
+# rpart.plot(tree1)
+```
+
+## Example 2 from slides
+
+```{r}
+
+library(Metrics)
+
+# Depth restriction: maxdepth = k
+# Minimum in leaf node: minbucket = l
+
+
+
+# 
+# mse(Wages$Salary,predict(tree1))
+# mae(Wages$Salary,predict(tree1))
+
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+
+# m1 <- rpart(survived ~., data = ptitanic, method = "class",cp=.000001)
+# plotcp(m1) # relative cross validation error (y-axis) for various cp values (lower x-axis).
+# 
+# tree$cptable[which.min(tree$cptable[,"xerror"]),"CP"]
+# 
+# bestcp <- tree$cptable[which.min(tree$cptable[,"xerror"]),"CP"]
+# tree.pruned <- prune(tree, cp = bestcp)
+
+
+# rpart.plot(tree.pruned, extra=104, box.palette="GnBu",
+#                branch.lty=3, shadow.col="gray", nn=TRUE)
+```
+
+## Example 4 from slides
+
+```{r}
+
+Ball <- read.csv("Basketball.csv")
+
+# 
+# tree4 <- rpart(cbind(PTS,G)~,data = Ball, method = "poisson")
+# 
+# rpart.plot(tree4)
+```
+
+## Example 5 from slides
+
+```{r}
+
+
+set.seed(4050)
+
+# #use 80% of dataset as training set and 20% as test set
+# train <- ptitanic %>% dplyr::sample_frac(0.80)
+# test  <- dplyr::anti_join(ptitanic, train)
+
+# m1 <- rpart(survived ~., data = ptitanic, method = "class",cp=.000001)
+# plotcp(m1) # relative cross validation error (y-axis) for various cp values (lower x-axis).
+# 
+# tree$cptable[which.min(tree$cptable[,"xerror"]),"CP"]
+# 
+# bestcp <- tree$cptable[which.min(tree$cptable[,"xerror"]),"CP"]
+# tree.pruned <- prune(tree, cp = bestcp)
+
+
+# rpart.plot(tree.pruned, extra=104, box.palette="GnBu",
+#                branch.lty=3, shadow.col="gray", nn=TRUE)
+
+# confusionMatrix(ptitanic$survived, predict(tree, type="class"))
+```
+
+## Example 6 from slides
+
+```{r}
+
+set.seed(4050)
+
+#use 80% of dataset as training set and 20% as test set
+train6 <- Wages %>% dplyr::sample_frac(0.80)
+test6  <- dplyr::anti_join(Wages, train6)
+
+
+```

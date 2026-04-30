@@ -1,0 +1,89 @@
+---
+title: "ADSC4050 Tree Methods I Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Illustrative Example 1
+
+```{r}
+
+# library(rpart)
+# library(rpart.plot)
+# 
+# data("iris")
+# 
+# tree <- rpart(Species ~., data = iris, method = "class")
+# tree
+# 
+# rpart.plot(tree)
+# 
+# table(iris$Species, predict(tree, type = "class"))
+```
+
+## Example 1 from slides
+
+```{r}
+
+
+
+
+
+```
+
+## Example 2 from slides
+
+```{r}
+
+library(caret)
+data("ptitanic")
+
+# rpart(survived ~., data = ptitanic, method = "class",cp=)
+# 
+# rpart(survived ~., data = ptitanic, method = "class",maxdepth = k)
+# rpart.plot(rpart(survived ~., data = ptitanic, method = "class",minbucket = l))
+
+# 
+# confusionMatrix(ptitanic$survived, predict(tree, type="class"))
+# confusionMatrix(factor(test$species),predict(model2.A,test)$class)
+```
+
+## Example 3 from slides
+
+```{r}
+
+
+# m1 <- rpart(survived ~., data = ptitanic, method = "class",cp=.000001)
+# plotcp(m1) # relative cross validation error (y-axis) for various cp values (lower x-axis).
+# 
+# tree$cptable[which.min(tree$cptable[,"xerror"]),"CP"]
+# 
+# bestcp <- tree$cptable[which.min(tree$cptable[,"xerror"]),"CP"]
+# tree.pruned <- prune(tree, cp = bestcp)
+
+
+# rpart.plot(tree.pruned, extra=104, box.palette="GnBu",
+#                branch.lty=3, shadow.col="gray", nn=TRUE)
+```
+
+## Example 4 from slides
+
+```{r}
+
+library(caret)
+library(vip)
+
+# tree <- train(
+#   survived ~., 
+#   data = na.omit(ptitanic),
+#   method = "rpart",
+#   trControl = trainControl(method = "cv", number = 10),
+#   tuneLength = 20
+# )
+# 
+# ggplot(tree)
+# 
+# 
+# vip(tree)
+```

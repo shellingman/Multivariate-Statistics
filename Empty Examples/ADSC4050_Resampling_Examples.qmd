@@ -1,0 +1,229 @@
+---
+title: "ADSC4050 Resampling Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Example 1 from slides
+
+```{r}
+
+library(caret)
+library(randomForest)
+library(rsample)
+
+data(GermanCredit)
+
+table(GermanCredit$Class)
+
+n_features <- length(setdiff(names(GermanCredit), "Class"))
+
+set.seed(4050)
+
+Credit_split <- initial_split(GermanCredit, prop = 0.8) 
+
+# Extract the training and testing data frames
+train_data <- training(Credit_split)
+test_data <- testing(Credit_split)
+
+
+
+ctrl <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 3,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  savePredictions = TRUE
+)
+
+model1 <- train(
+  Class ~ ., 
+  data = train_data,
+  method = "rf",
+  metric = "ROC",
+  trControl = ctrl
+)
+
+model1$results
+
+confusionMatrix(model1)
+
+
+pred1 <- predict(model1, test_data)
+
+confusionMatrix(pred1, test_data$Class)
+
+```
+
+## Example 2 from slides
+
+```{r}
+
+
+set.seed(4050)
+
+
+down_train <- downSample(x = train_data[, -ncol(train_data)],
+                         y = train_data$Class)
+table(down_train$Class)   
+
+## Example ##
+
+# ctrl_down <- trainControl(
+#   method = "repeatedcv",
+#   number = 10,
+#   repeats = 3,
+#   sampling = "down",
+#   classProbs = TRUE,
+#   summaryFunction = twoClassSummary
+# )
+# 
+# model_down <- train(
+#   Class ~ ., 
+#   data = train_data,
+#   method = "rf",
+#   metric = "ROC",
+#   trControl = ctrl_down
+# )
+# 
+# pred_down <- predict(model_down, test_data)
+# 
+# confusionMatrix(pred_down, test_data$Class)
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+set.seed(4050)
+
+up_train <- upSample(x = train_data[, -ncol(train_data)],
+                         y = train_data$Class)
+table(up_train$Class) 
+
+
+## Example ##
+
+# 
+# ctrl_up <- trainControl(
+#   method = "repeatedcv",
+#   number = 10,
+#   repeats = 3,
+#   sampling = "up",
+#   classProbs = TRUE,
+#   summaryFunction = twoClassSummary
+# )
+# 
+# model_up <- train(
+#   Class ~ ., 
+#   data = train_data,
+#   method = "rf",
+#   metric = "ROC",
+#   trControl = ctrl_up
+# )
+# 
+# model_up$results
+# 
+# confusionMatrix(model_up)
+# 
+# pred_up <- predict(model_up, test_data)
+# 
+# confusionMatrix(pred_up, test_data$Class)
+
+
+```
+
+## Example 4 from slides
+
+```{r}
+
+library(themis)
+library(recipes)
+
+set.seed(4050)
+
+rec <- recipe(Class ~ ., data = train_data) %>%
+  step_smote(Class)
+
+
+rec_prep <- prep(rec)
+
+
+smote_train <- bake(rec_prep, new_data = NULL)
+
+
+table(smote_train$Class)
+
+## Example ##
+
+# ctrl_smote <- trainControl(
+#   method = "repeatedcv",
+#   number = 10,
+#   repeats = 3,
+#   sampling = "smote",
+#   classProbs = TRUE,
+#   summaryFunction = twoClassSummary
+# )
+# 
+# model_smote <- train(
+#   Class ~ ., 
+#   data = train_data,
+#   method = "rf",
+#   metric = "ROC",
+#   trControl = ctrl_smote
+# )
+# 
+# model_smote$results
+# 
+# confusionMatrix(model_smote)
+# 
+# pred_smote <- predict(model_smote, test_data)
+# 
+# confusionMatrix(pred_smote, test_data$Class)
+
+```
+
+## Example 5 from slides
+
+```{r}
+
+library(ROSE)
+
+set.seed(4050)
+
+rose_train <- ROSE(Class ~ ., data  = train_data)$data                         
+table(rose_train$Class) 
+
+
+
+## Example ##
+
+# ctrl_rose <- trainControl(
+#   method = "repeatedcv",
+#   number = 10,
+#   repeats = 3,
+#   sampling = "rose",
+#   classProbs = TRUE,
+#   summaryFunction = twoClassSummary
+# )
+# 
+# model_rose <- train(
+#   Class ~ ., 
+#   data = train_data,
+#   method = "rf",
+#   metric = "ROC",
+#   trControl = ctrl_rose
+# )
+# 
+# model_rose$results
+# 
+# confusionMatrix(model_rose)
+# 
+# pred_rose <- predict(model_rose, test_data)
+# 
+# confusionMatrix(pred_rose, test_data$Class)
+
+```

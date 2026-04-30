@@ -1,0 +1,123 @@
+---
+title: "ADSC4050 Quadratic Discriminant Analysis Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Example 1 from slides
+
+```{r}
+
+library(MASS)
+library(dplyr)
+
+## 1 ##
+
+Penguins <- read.csv("Penguins2.csv")
+
+P2 <- Penguins %>%
+  dplyr::select(c(2:5)) %>%
+  scale() %>%
+  cbind(Penguins[,1,drop=FALSE])
+
+
+## 2:EDA ##
+
+library(plotly)
+
+pairs(P2[,1:4])
+
+fig <- plot_ly(P2, x = ~bill_depth_mm, y = ~flipper_length_mm, z = ~body_mass_g, color = ~species, colors = c('black', 'blue', 'orange'))
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = 'Scaled Bill Depth'),
+                     yaxis = list(title = 'Scaled Flipper Length'),
+                     zaxis = list(title = 'Scaled Body Mass')))
+
+fig
+
+## 3:LDA ##
+
+```
+
+## Example 2 from slides
+
+```{r}
+
+
+library(caret)
+
+## 1 ##
+
+set.seed(4050)
+
+# P2$ID <- 1:nrow(P2)
+# train <- P2 %>% dplyr::sample_frac(.75)
+# test  <- dplyr::anti_join(P2, train, by = 'ID')
+# 
+# ## 2:New model ##
+# 
+# model2 <- qda(,data = train)
+# 
+# ## 3 ##
+# 
+# 
+# 
+# ## 4 ##
+# 
+# confusionMatrix(factor(train$species),predict(model2)$class)
+# 
+# 
+# ## 5 ##
+# 
+# confusionMatrix(factor(test$species),predict(model2,test)$class)
+
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+# library(devtools)
+# install_github("ItziarI/WeDiBaDis")
+
+library(WeDiBaDis)
+
+# model3 <- WDBdisc(data,
+# datatype = "m",
+# classcol = 5,
+# new.ind = NULL,
+# distance = "euclidean"
+# )
+# 
+# 
+# summary()
+# plot()
+# plot(summary())
+
+
+
+
+
+
+```
+
+## Example 4 from slides
+
+```{r}
+
+
+
+# dm <- as.matrix(dist(P2[,1:4]))
+# 
+# dm <- cbind.data.frame(P2$species,dm)
+# 
+# 
+# model4 <- WDBdisc(data=dm, datatype="d", method="DB",
+# classcol = 1)
+# summary(model4)
+
+
+
+```

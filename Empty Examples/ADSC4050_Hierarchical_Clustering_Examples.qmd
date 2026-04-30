@@ -1,0 +1,158 @@
+---
+title: "ADSC4050 Hierarchical Clustering Examples"
+author: "Sean Hellingman"
+format: pdf
+editor: visual
+---
+
+## Illustrative Example 1
+
+```{r}
+
+library(plotly)
+data(iris)
+
+
+# fig <- plot_ly(iris, x = ~Petal.Length, y = ~Petal.Width, z = ~Sepal.Length, color = ~Species, colors = c('black', 'blue', 'orange'))
+# fig <- fig %>% add_markers()
+# fig <- fig %>% layout(scene = list(xaxis = list(title = 'Petal Length'),
+#                      yaxis = list(title = 'Petal Width'),
+#                      zaxis = list(title = 'Sepal Length')))
+# 
+# fig
+
+
+```
+
+## Example 1 from slides
+
+```{r}
+
+# Dist <- matrix(c(
+#   0, 26, 32, 42, 56,
+#   26, 0, 14, 56, 54,
+#   32, 14, 0, 50, 36,
+#   42, 56, 50, 0, 10,
+#   56, 54, 36, 10, 0
+# ), nrow = 5, byrow = TRUE)
+# 
+# colnames(Dist) <- rownames(Dist) <- 1:5
+# as.dist(Dist)
+# 
+# hclust()
+# plot()
+```
+
+## Example 2 from slides
+
+```{r}
+
+library(dplyr)
+
+set.seed(4050)
+
+iris.sample <- iris %>% 
+  sample_n(35)
+
+
+```
+
+## Example 3 from slides
+
+```{r}
+
+# Single linkage: method="single"
+# Complete linkage: method="complete"
+# Group average: method="average"
+# Ward’s minimum variance method: method="ward.D" or method="ward.D2"
+
+```
+
+## Example 4 from slides
+
+```{r}
+
+
+Clust <- hclust(dist(iris.sample[,1:4]),method="single")
+
+plot(Clust)
+abline(h = 0.8, col = "red") # 3 groups
+abline(h = 1.5, col = "blue") # 2 groups
+
+
+cutree(Clust,k=3)
+
+
+
+
+```
+
+## Example 5
+
+```{r}
+
+
+scree <- function(hclust.obj, max.size = 12) {
+  temp <- with(hclust.obj, cbind(height, merge))
+  colnames(temp) <- c("Height", "JoinsThis", "WithThis")
+    plot(x = max.size:1,
+       y = temp[(nrow(temp)-( max.size -1)):nrow(temp), 1],
+       xlab = "Number of groups", ylab = "Height",
+       main = hclust.obj $call, type = "b")
+  tail(temp, max.size)
+}
+
+
+```
+
+```{r}
+
+# scree(Clust)
+```
+
+## Example 6
+
+```{r}
+
+library(NbClust)
+
+# NbClust(data = df, diss = dis.matrix, distance = "euclidean", max.nc = 15, method = "single")
+
+```
+
+## Illustrative Example 3
+
+```{r}
+
+library(dendextend)
+
+
+Dist <- matrix(c(
+  0, 26, 32, 42, 56,
+  26, 0, 14, 56, 54,
+  32, 14, 0, 50, 36,
+  42, 56, 50, 0, 10,
+  56, 54, 36, 10, 0
+), nrow = 5, byrow = TRUE)
+
+colnames(Dist) <- rownames(Dist) <- 1:5
+
+as.dist(Dist) %>% 
+  hclust() %>% 
+  as.dendrogram() %>% 
+  set("branches_k_color", k = 2) %>%
+  set("labels_col", k = 2) %>%
+  plot
+
+
+```
+
+## Exercise 1
+
+```{r}
+
+library(HDclassif)
+data(wine)
+
+
+```
