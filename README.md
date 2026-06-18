@@ -26,21 +26,20 @@ Upon completion of the course the students will be expected to:
 4. Select an appropriate method of analysis given the analytic question.
 
 ### Tentative Course Topics
-1. Distance metrics
-2. Principal Component Analysis (PCA)
-3. Canonical Correlation Analysis (CCA)
-4. Singular Value Decomposition (SVD)
-5. Factor Analysis (FA)
-6. Resampling methods
-7. K-means clustering
-8. Hierarchical clustering
-9. Discriminant analysis
-10. Classification trees
-11. Bagging
-12. Random forests
+1. Introduction to Multivariate Statistics
+2. Distance Measures
+3. Multivariate Outlier Detection
+4. Hierarchical Clustering
+5. K-means Clustering
+6. Linear Discriminant Analysis
+7. Quadratic Discriminant Analysis
+8. Tree Methods (Recursive partitioning) 
+9. Bagging
+10. Random Forests
+11. Principal Component Analysis
+12. K-Nearest Neighbors
 13. Boosting
-14. Nearest Neighbours
-
+14. Resampling (unbalanced samples)
 
 ---
 
